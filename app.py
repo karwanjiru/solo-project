@@ -1,15 +1,16 @@
 import os
-from PIL import Image
-import torch
-from torchvision import transforms
-from transformers import AutoProcessor, FocalNetForImageClassification
-import gradio as gr
-import numpy as np
+from io import BytesIO
 import random
+import torch
+from PIL import Image
+from transformers import AutoProcessor, FocalNetForImageClassification
 from diffusers import DiffusionPipeline
+from detoxify import Detoxify
+import gradio as gr
 from huggingface_hub import InferenceClient
 import requests
-from io import BytesIO
+from torchvision import transforms
+import numpy as np
 
 # Paths and model setup
 model_path = "MichalMlodawski/nsfw-image-detection-large"
@@ -38,27 +39,28 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Load the diffusion pipeline
 if torch.cuda.is_available():
-    torch.cuda.max_memory_allocated(device=device)
-    pipe = DiffusionPipeline.from_pretrained("stabilityai/sdxl-turbo", torch_dtype=torch.float16, variant="fp16", use_safetensors=True)
+    pipe = DiffusionPipeline.from_pretrained("stabilityai/sdxl-turbo", torch_dtype=torch.float16, use_safetensors=True)
     pipe.enable_xformers_memory_efficient_attention()
     pipe = pipe.to(device)
-else: 
+else:
     pipe = DiffusionPipeline.from_pretrained("stabilityai/sdxl-turbo", use_safetensors=True)
     pipe = pipe.to(device)
 
 MAX_SEED = np.iinfo(np.int32).max
-MAX_IMAGE_SIZE = 1024
 
 # Initialize the InferenceClient
 client = InferenceClient("HuggingFaceH4/zephyr-7b-beta")
+
+# Function to analyze text
+def analyze_text(input_text):
+    results = Detoxify('original').predict(input_text)
+    return results
 
 # Inference function for generating images
 def infer(prompt, negative_prompt, seed, randomize_seed, width, height, guidance_scale, num_inference_steps):
     if randomize_seed:
         seed = random.randint(0, MAX_SEED)
-        
     generator = torch.Generator().manual_seed(seed)
-    
     image = pipe(
         prompt=prompt, 
         negative_prompt=negative_prompt,
@@ -68,28 +70,23 @@ def infer(prompt, negative_prompt, seed, randomize_seed, width, height, guidance
         height=height,
         generator=generator
     ).images[0] 
-    
     return image
 
 # Respond function for the chatbot
 def respond(message, history, system_message, max_tokens, temperature, top_p):
     messages = [{"role": "system", "content": system_message}]
-    
     for val in history:
         if val[0]:
             messages.append({"role": "user", "content": val[0]})
         if val[1]:
             messages.append({"role": "assistant", "content": val[1]})
-
     messages.append({"role": "user", "content": message})
-    
     response = client.chat_completion(
         messages,
         max_tokens=max_tokens,
         temperature=temperature,
         top_p=top_p,
     )
-    
     return response.choices[0].message['content']
 
 # Function to generate posts
@@ -104,9 +101,10 @@ def generate_post(prompt, max_tokens, temperature, top_p):
 
 # Function to moderate posts
 def moderate_post(post):
-    # Implement your post moderation logic here
-    if "inappropriate" in post:
-        return "Post does not adhere to community guidelines."
+    results = Detoxify('original').predict(post)
+    for key, value in results.items():
+        if value > 0.5:
+            return "Post does not adhere to community guidelines."
     return "Post adheres to community guidelines."
 
 # Function to generate images using the diffusion pipeline
@@ -117,26 +115,6 @@ def generate_image(prompt):
 
 # Function to moderate images
 def moderate_image(image):
-    # Convert the PIL image to a format that can be sent for moderation
-    buffered = BytesIO()
-    image.save(buffered, format="JPEG")
-    image_bytes = buffered.getvalue()
-    
-    # Replace with your actual image moderation API endpoint
-    moderation_api_url = "https://example.com/moderation/api"
-    
-    # Send the image to the moderation API
-    response = requests.post(moderation_api_url, files={"file": image_bytes})
-    result = response.json()
-    
-    # Check the result from the moderation API
-    if result.get("moderation_status") == "approved":
-        return "Image adheres to community guidelines."
-    else:
-        return "Image does not adhere to community guidelines."
-
-# Function to classify NSFW images
-def classify_nsfw(image):
     image_tensor = transform(image).unsqueeze(0)
     inputs = feature_extractor(images=image, return_tensors="pt")
     with torch.no_grad():
@@ -214,6 +192,6 @@ with gr.Blocks(css=css) as demo:
             selected_image = gr.Image(type="pil", label="Upload Image for Moderation")
             classify_button = gr.Button("Classify Image")
             classification_result = gr.Textbox(label="Classification Result")
-            classify_button.click(classify_nsfw, selected_image, classification_result)
+            classify_button.click(moderate_image, selected_image, classification_result)
 
 demo.launch()
