@@ -1,0 +1,9 @@
+huggingface_hub==0.22.2
+accelerate
+diffusers
+invisible_watermark
+torch
+transformers
+xformers
+torchvision
+Pillow
