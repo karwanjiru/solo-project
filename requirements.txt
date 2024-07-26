@@ -9,8 +9,4 @@ torchvision
 Pillow
 detoxify
 altair==4.1.0
-uvicorn==0.30.3
-watchfiles==0.22.0
-websockets==11.0.3
-xformers==0.0.27.post1
-zipp==3.19.2
+
