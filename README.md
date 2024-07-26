@@ -13,12 +13,28 @@ This project provides an AI-driven content generation and moderation system for 
 - **Interactive Interface**: User-friendly web interface using Gradio for generating and moderating content.
 
 ## Prerequisites
+- Storage space
 
 Ensure you have the following installed:
 
 - Python 3.7+ (I used 3.11 though)
 - Pip (Python package installer)
 - Virtual Environment (optional but recommended)
+
+## Dependencies
+***Disclaimer: I'd advice on using the requirements.txt file for exact versions of everything***
+    huggingface_hub
+    accelerate
+    diffusers
+    invisible_watermark
+    torch
+    transformers
+    xformers
+    torchvision
+    Pillow
+    gradio
+    detoxify
+    altair
 
 ## Installation
 
@@ -33,12 +49,18 @@ Ensure you have the following installed:
 
    ```bash
    python -m venv venv
-   source venv/bin/activate  
+   ```
+   On Mac use
+   ```
+   source venv/bin/activate
+   ```  
    On Windows use
+   ```
    `venv\Scripts\activate`
    ```
 
-3. **Install Dependencies**
+3. **Install Dependencies** 
+***Exact versions to avoid conflicts***
 
    ```bash
    pip install -r requirements.txt
@@ -53,6 +75,7 @@ Ensure you have the following installed:
    ```bash
    python app.py
    ```
+   ***This may also take a min to run ***
 
    This will launch a Gradio interface in your default web browser.
 
@@ -100,4 +123,5 @@ This project is licensed under the MIT License. `LICENSE` file for details comin
 
 For any questions or support, please contact [Diana Wanjiru](mailto:karwanjiru@gmail.com).
 
+Project still under development....enhancements may be added
 ---
