@@ -6,6 +6,7 @@ torch
 transformers
 xformers
 torchvision
+gradio
 Pillow
 detoxify
 altair==4.1.0
