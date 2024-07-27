@@ -3,6 +3,7 @@
 ## Overview
 
 This project provides an AI-driven content generation and moderation system for a social media platform. The system generates engaging content based on user inputs and moderates user-generated content to ensure compliance with community guidelines. It utilizes Generative AI models and moderation algorithms to deliver a seamless experience.
+Link to live site(https://huggingface.co/spaces/karwanjiru/solo-project)
 
 ## Features
 
