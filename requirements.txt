@@ -10,4 +10,4 @@ gradio
 Pillow
 detoxify
 altair==4.1.0
-
+streamlit
